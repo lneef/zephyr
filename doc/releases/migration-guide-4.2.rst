@@ -92,6 +92,11 @@ Boards
   variant (``stm32n6570_dk/stm32n657xx/fsbl``) that must be selected explicitly.
   See board documentation for more information about these variants.
 
+* STM32 boards that embed TF-M BL2 boot stage (``b_u585i_iot02a//ns``, ``nucleo_l552ze_q//ns``
+  and ``stm32l562e_dk//ns``) do not embed HW crypto accelerator drivers in BL2 as they previously
+  did, now relying on Mbed TLS software implementation. This is related to the upgrade to TF-M
+  v2.2. HW crypto accelerators are still supported in TF-M, but only in the runtime secure firmware.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -562,7 +567,7 @@ Networking
   event types as those are now ``uint64_t`` and the socket option expects a normal 32 bit
   integer value. Because of this, a new ``SO_NET_MGMT_ETHERNET_SET_QAV_PARAM``
   and ``SO_NET_MGMT_ETHERNET_GET_QAV_PARAM`` socket options are created that will replace
-  the previously used ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` and
+  the previously used ``NET_REQUEST_ETHERNET_SET_QAV_PARAM`` and
   ``NET_REQUEST_ETHERNET_GET_QAV_PARAM`` options.
 
 * The DNS server resolver configuration functions :c:func:`dns_resolve_reconfigure` and
@@ -760,6 +765,14 @@ State Machine Framework
   propagate handling to parent states should return :c:enum:`SMF_EVENT_PROPAGATE`.
 * Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
   would be the most technically accurate response.
+
+Modbus
+======
+
+* The ``client_stop_bits`` field in :c:struct:`modbus_serial_param` has been renamed into ``stop_bits``.
+  The setting is valid in both client and server modes.
+* Custom stop-bit settings are disabled by default and should be enabled
+  by :kconfig:option:`CONFIG_MODBUS_NONCOMPLIANT_SERIAL_MODE`.
 
 Modules
 *******
