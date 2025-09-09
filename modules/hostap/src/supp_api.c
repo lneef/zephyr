@@ -408,6 +408,8 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 			return WIFI_SECURITY_TYPE_SAE_HNP;
 		}
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
+	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256:
+	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
@@ -799,23 +801,27 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
-					goto out;
-				}
-
-				if (!wpa_cli_cmd_v("set_network %d pairwise CCMP",
-						   resp.network_id)) {
-					goto out;
-				}
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
-					   psk_null_terminated)) {
+
+			if (!wpa_cli_cmd_v("set_network %d group TKIP CCMP", resp.network_id)) {
 				goto out;
 			}
 
+			if (!wpa_cli_cmd_v("set_network %d pairwise TKIP CCMP", resp.network_id)) {
+				goto out;
+			}
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
 			if (params->sae_password) {
+				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
+				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+					wpa_printf(MSG_ERROR,
+						"Passphrase should be in range (%d-%d) characters",
+						WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
+					goto out;
+				}
+				strncpy(sae_null_terminated, params->sae_password,
+					WIFI_SAE_PSWD_MAX_LEN);
+				sae_null_terminated[params->sae_password_length] = '\0';
 				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
 						   resp.network_id, sae_null_terminated)) {
 					goto out;
@@ -827,20 +833,29 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
+			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
+					   psk_null_terminated)) {
+				goto out;
+			}
+
 			if (!wpa_cli_cmd_v("set sae_pwe 2")) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK SAE",
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK WPA-PSK-SHA256 SAE",
 					   resp.network_id)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d proto WPA RSN", resp.network_id)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d group TKIP CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise TKIP CCMP", resp.network_id)) {
 				goto out;
 			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
@@ -1793,6 +1808,35 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
 }
 
+bool supplicant_bss_support_neighbor_rep(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	bool is_support = false;
+	const u8 *rrm_ie = NULL;
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return false;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	if (!wpa_s->rrm.rrm_used) {
+		goto out;
+	}
+
+	rrm_ie = wpa_bss_get_ie(wpa_s->current_bss,
+				WLAN_EID_RRM_ENABLED_CAPABILITIES);
+	if (!rrm_ie || !(wpa_s->current_bss->caps & IEEE80211_CAP_RRM) ||
+	    !(rrm_ie[2] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		goto out;
+	}
+	is_support = true;
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return is_support;
+}
+
 int supplicant_bss_ext_capab(const struct device *dev, int capab)
 {
 	struct wpa_supplicant *wpa_s;
@@ -1876,6 +1920,11 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason)
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
 		ret = 0;
+		goto out;
+	}
+
+	/* Flush all unused BSS entries */
+	if (!wpa_cli_cmd_v("bss_flush")) {
 		goto out;
 	}
 

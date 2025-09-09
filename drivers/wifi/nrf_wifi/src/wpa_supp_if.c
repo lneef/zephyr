@@ -1516,7 +1516,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 {
 	int count;
 
-	if (event && (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
+	if (event == NULL || (event->nrf_wifi_n_bitrates == 0 || event->nrf_wifi_n_channels == 0)) {
 		return NRF_WIFI_STATUS_FAIL;
 	}
 	memset(band, 0, sizeof(*band));
@@ -1578,6 +1578,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->ht_cap.wpa_supp_ampdu_factor = event->ht_cap.nrf_wifi_ampdu_factor;
 	band->ht_cap.wpa_supp_ampdu_density = event->ht_cap.nrf_wifi_ampdu_density;
 
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	band->vht_cap.wpa_supp_vht_supported = event->vht_cap.nrf_wifi_vht_supported;
 	band->vht_cap.wpa_supp_cap = event->vht_cap.nrf_wifi_cap;
 
@@ -1585,6 +1586,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->vht_cap.vht_mcs.rx_highest = event->vht_cap.vht_mcs.rx_highest;
 	band->vht_cap.vht_mcs.tx_mcs_map = event->vht_cap.vht_mcs.tx_mcs_map;
 	band->vht_cap.vht_mcs.tx_highest = event->vht_cap.vht_mcs.tx_highest;
+#endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_AP */
 
 	band->band = event->band;
 
@@ -1807,6 +1809,11 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 		capa->extended_capa_mask = rpu_ctx_zep->extended_capa_mask;
 		capa->extended_capa_len = rpu_ctx_zep->extended_capa_len;
 	}
+	/* Based on testing, this works to fix the disconnection due to delayed
+	 * keepalive to the AP
+	 */
+	capa->driver_tx_processing_delay_ms = 1000;
+
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return status;

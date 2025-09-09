@@ -27,7 +27,7 @@ void flash_mspi_command_set(const struct device *dev, const struct flash_mspi_no
 	dev_data->xfer.xfer_mode  = MSPI_PIO;
 	dev_data->xfer.packets    = &dev_data->packet;
 	dev_data->xfer.num_packet = 1;
-	dev_data->xfer.timeout    = 10;
+	dev_data->xfer.timeout    = dev_config->transfer_timeout;
 
 	dev_data->xfer.cmd_length = cmd->cmd_length;
 	dev_data->xfer.addr_length = cmd->addr_length;
@@ -385,6 +385,12 @@ static int api_erase(const struct device *dev, off_t addr, size_t size)
 	release(dev);
 
 	return rc;
+}
+
+static int api_get_size(const struct device *dev, uint64_t *size)
+{
+	*size = dev_flash_size(dev);
+	return 0;
 }
 
 static const
@@ -771,6 +777,7 @@ static DEVICE_API(flash, drv_api) = {
 	.read = api_read,
 	.write = api_write,
 	.erase = api_erase,
+	.get_size = api_get_size,
 	.get_parameters = api_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = api_page_layout,
@@ -887,6 +894,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 				/ 1000,						\
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / 1000,))					\
+		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP(inst, jedec_id),			\
 		.jedec_cmds = FLASH_CMDS(inst),					\
