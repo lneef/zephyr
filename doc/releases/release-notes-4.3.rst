@@ -48,12 +48,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
-* RTIO
-
-  * :c:func:`rtio_is_spi`
-  * :c:func:`rtio_is_cspi`
-  * :c:func:`rtio_is_i3c`
-  * :c:func:`rtio_read_regs_async`
+..
+  Only removed, deprecated and new APIs, changes go in migration guide.
 
 Removed APIs and options
 ========================
@@ -66,6 +62,11 @@ Deprecated APIs and options
 ===========================
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
+
+* :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
+  used instead.
+
+* :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
 
 New APIs and options
 ====================
@@ -171,9 +172,26 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
 
+* Networking
+
+  * Sockets
+
+    * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
+      socket will limit the number of pending incoming connections to that value.
+
+* Newlib
+
+  * :kconfig:option:`CONFIG_NEWLIB_LIBC_USE_POSIX_LIMITS_H`
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
+   * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
+   * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
+     only needs to enable any "suspend-to-ram" power state in the devicetree.
+   * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
+     :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
+     is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
 
 * Settings
 
@@ -189,9 +207,17 @@ New APIs and options
       * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
       * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
 
+* Storage
+
+    * :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_LS_SIZE`
+
 * Sys
 
   * :c:func:`sys_count_bits`
+
+* Task Watchdog
+
+  * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
 .. zephyr-keep-sorted-stop
 
@@ -218,6 +244,14 @@ New Drivers
 * Interrupt controller
 
    * STM32 EXTI interrupt/event controller (:dtcompatible:`st,stm32-exti`) has a dedicated driver and API now, separate from STM32 GPIO Interrupt Control driver.
+
+* MFD
+   * IRQ support has been added for X-Power AXP2101 MFD device. It gets automatically
+     enabled as soon as device-tree property ``int-gpios`` is defined on the device node.
+
+   * Support for the power button found on the X-Power AXP2101 MFD is added and can be enabled
+     via :kconfig:option:`MFD_AXP2101_POWER_BUTTON`. This feature requires interrupt support to
+     be enabled.
 
 * RTC
 

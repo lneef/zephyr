@@ -41,6 +41,11 @@ Base Libraries
 Boards
 ******
 
+* b_u585i_iot02a/ns: The flash layout was changed to be in sync with the upstream TF-M 2.2.1 board
+  configurations. The new layout expands the flash partitions, moving the secondary ones to the
+  external NOR flash. This change currently prevents upgrade from older Zephyr release images to
+  Zephyr 4.3 release images. More details in the TF-M migration and release notes.
+
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
@@ -52,6 +57,13 @@ Device Drivers and Devicetree
 *****************************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+MFD
+===
+
+* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+  kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
+  used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
 Phy
 ===
@@ -106,6 +118,12 @@ Bluetooth Audio
 * Setting the BGS role for GMAP now requires also supporting and implementing the
   :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
   See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
+* The BAP Scan Delegator will no longer automatically update the PA sync state, and
+  :c:func:`bt_bap_scan_delegator_set_pa_state` must be used to update the state. If the
+  BAP Scan Delegator is used together with the BAP Broadcast Sink, then the PA state of the
+  receive state of a  :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
+  PA state changes. (:github:`95453``)
+
 
 .. zephyr-keep-sorted-stop
 
@@ -133,6 +151,14 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+Power management
+****************
+
+* :kconfig:option:`CONFIG_PM_S2RAM` and :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` have been
+  refactored to be automatically managed by SoCs and the devicetree. Applications shall no
+  longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
+  in the devicetree.
+
 Networking
 **********
 
@@ -144,6 +170,11 @@ Networking
 .. zephyr-keep-sorted-start re(^\w)
 
 .. zephyr-keep-sorted-stop
+
+Modem
+*****
+
+* ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
 
 Display
 *******
@@ -176,6 +207,14 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+RTIO
+====
+
+* Callback operations now take an additional argument corresponding to the result code of the first
+  error in the chain.
+* Callback operations are always called regardless of success/error status of previous submissions
+  in the chain.
 
 Secure storage
 ==============

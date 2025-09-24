@@ -54,7 +54,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -506,7 +507,7 @@
 			status = "disabled";
 		};
 
-		eeprom: eeprom@8080000{
+		eeprom: eeprom@8080000 {
 			compatible = "st,stm32-eeprom";
 			status = "disabled";
 		};

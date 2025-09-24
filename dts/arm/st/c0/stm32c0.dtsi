@@ -104,7 +104,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -152,7 +153,7 @@
 
 	soc {
 		flash: flash-controller@40022000 {
-			compatible = "st,stm32-flash-controller" , "st,stm32g0-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32g0-flash-controller";
 			reg = <0x40022000 0x400>;
 			interrupts = <3 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 8)>;
@@ -489,7 +490,7 @@
 			interrupts = <11 0>;
 			dma-channels = <3>;
 			dma-generators = <4>;
-			dma-requests= <49>;
+			dma-requests = <49>;
 			status = "disabled";
 		};
 	};

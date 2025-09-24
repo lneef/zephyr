@@ -31,11 +31,14 @@
 	};
 
 	retram: memory0@0 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x00000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "RETRAM";
 	};
+
 	mcusram: memory1@10000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "MCUSRAM";
 		reg = <0x10000000 DT_SIZE_K(320)>;
 	};
 
@@ -209,7 +212,7 @@
 			interrupts = <102 0>;
 			dma-channels = <16>;
 			dma-generators = <8>;
-			dma-requests= <108>;
+			dma-requests = <108>;
 			status = "disabled";
 		};
 

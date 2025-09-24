@@ -42,12 +42,14 @@
 				substate-id = <1>;
 				min-residency-us = <100>;
 			};
+
 			stop1: state1 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+
 			stop2: state2 {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -58,7 +60,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -510,7 +513,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-channels = <14>;
 			dma-generators = <4>;
-			dma-requests= <38>;
+			dma-requests = <38>;
 			status = "disabled";
 		};
 
